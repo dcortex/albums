@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Albums</title>
+    <script src="https://unpkg.com/vue"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <style>
+        .album-container {
+
+        }
+        .photo-item {
+            display: inline-block;
+            text-align: center;
+            margin: 10px 10px;
+            padding: 10px;
+            border: 3px solid white;
+            min-width: 20%;
+        }
+        .photo-item img {
+            
+        }
+        .photo-item span {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+            <album v-for="(item, index) in albumsToShow" :info="item" :color="colors[index]"></album>
+    </div>
+
+    <script>
+
+        // Define a new component called button-counter
+        Vue.component('album', {
+            props: ['info', 'color'],
+            template: ` <div class="album-container" :data-album-id="info.id">
+                            <div v-for="item in photosToShow" :data-photo-id="item.id" class="photo-item" :style="{borderColor: color}">
+                                <img :src="item.thumbnailUrl"/>
+                                <span>{{ item.title }}</span>    
+                            </div>
+                        </div>`,
+            computed: {
+                photosToShow: function () {
+                    console.log(this.info);
+                    return this.info.photos.sort((a, b) => b.id-a.id).slice(0, 2);
+                }
+            }
+        })
+
+        var app = new Vue({
+            el: '#app',
+            data: function () {
+                return {
+                    albums: [],
+                    colors: ['green', 'blue', 'purple'],
+                };
+            },
+            mounted: function() {
+                let componentData = this;
+                axios.get('https://jsonplaceholder.typicode.com/photos')
+                .then(function (response) {
+                    // handle success
+                    // console.log(response.data);
+                    let rawData = response.data;
+                    let oAlbums = rawData.reduce( (acc, current) => { 
+                        if( !acc.hasOwnProperty(current.albumId) ) acc[current.albumId] = [];
+                        acc[current.albumId].push(current);
+                        return acc;
+                    }, {});
+                    
+                    let albums = [];
+                    for (var property in oAlbums) {
+                        if (oAlbums.hasOwnProperty(property)) {
+                            albums.push( { id: property, photos: oAlbums[property] } );
+                        }
+                    }
+                    componentData.albums = albums;
+                })
+                .catch(function (error) {
+                    // handle error
+                    console.log(error);
+                })
+                .then(function () {
+                    // always executed
+                });
+            },
+            computed: {
+                albumsToShow: function () {
+                    return this.albums.sort((a, b) => b.id-a.id).slice(0, 3);
+                }
+            }
+        })
+      </script>
+</body>
+</html>
